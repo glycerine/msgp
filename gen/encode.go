@@ -102,17 +102,63 @@ func (e *encodeGen) appendraw(bts []byte) {
 
 func (e *encodeGen) structmap(s *Struct) {
 	nfields := len(s.Fields)
-	data := msgp.AppendMapHeader(nil, uint32(nfields))
-	e.p.printf("\n// map header, size %d", nfields)
-	e.Fuse(data)
+	numOmitEmptyFields := 0
+	oe := false
+	for i := range s.Fields {
+		if s.Fields[i].OmitEmpty {
+			numOmitEmptyFields++
+		}
+	}
+	var data []byte
+	if numOmitEmptyFields > 0 {
+		oe = true
+		om := emptyOmitter(&e.p, s.vname)
+		e.p.comment("some fields have the omitempty tag, honor it:")
+		e.p.printf("var isempty [%v]bool\n", nfields)
+		for i := range s.Fields {
+			if s.Fields[i].OmitEmpty {
+				e.p.printf("isempty[%v] = ", i)
+				next(om, s.Fields[i].FieldElem)
+			} else {
+				e.p.printf("isempty[%v]: %v not tagged as omitempty\n",
+					i, s.Fields[i].FieldTag)
+			}
+		}
+		e.p.printf(`
+	var fieldsInUse uint32
+	for i := range isempty {
+		if !isempty[i] {
+			fieldsInUse++
+		}
+	}
+	// map header
+	err = en.WriteMapHeader(fieldsInUse)
+	if err != nil {
+		return err
+	}
+`)
+
+	} else {
+		data = msgp.AppendMapHeader(nil, uint32(nfields))
+		e.p.printf("\n// map header, size %d", nfields)
+		e.Fuse(data)
+	}
+
 	for i := range s.Fields {
 		if !e.p.ok() {
 			return
+		}
+		if oe && s.Fields[i].OmitEmpty {
+			e.p.printf("\n if !isempty[%v] {\n", i)
 		}
 		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
 		e.p.printf("\n// write %q", s.Fields[i].FieldTag)
 		e.Fuse(data)
 		next(e, s.Fields[i].FieldElem)
+
+		if oe && s.Fields[i].OmitEmpty {
+			e.p.printf("\n }\n")
+		}
 	}
 }
 
