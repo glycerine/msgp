@@ -83,12 +83,12 @@ func IsEmptyBool(v, f string) string {
 }
 
 func IsEmptySlice(v, f string) string {
-	return fmt.Sprintf("(len(%s.%s) == 0) // slice/array omitempty\n",
+	return fmt.Sprintf("(len(%s.%s) == 0) // slice/array, omitempty\n",
 		v, f)
 }
 
 func IsEmptyTime(v, f string) string {
-	return fmt.Sprintf("(%s.%s.IsZero()) // time.Time omitempty\n",
+	return fmt.Sprintf("(%s.%s.IsZero()) // time.Time, omitempty\n",
 		v, f)
 }
 

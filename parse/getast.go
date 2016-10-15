@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tinylib/msgp/gen"
+	"github.com/glycerine/msgp/gen"
 	"github.com/ttacon/chalk"
 )
 
@@ -420,7 +420,7 @@ func (fs *FileSet) getField(f *ast.Field) []gen.StructField {
 				FieldElem:  ex.Copy(),
 				Deprecated: deprecated,
 				OmitEmpty:  omitempty,
-				ZebraId:    zebraid,
+				ZebraId:    zebraId,
 			})
 		}
 		return sf

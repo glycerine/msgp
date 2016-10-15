@@ -2,7 +2,7 @@ package gen
 
 import (
 	"fmt"
-	"github.com/tinylib/msgp/msgp"
+	"github.com/glycerine/msgp/msgp"
 	"io"
 	"strconv"
 )
