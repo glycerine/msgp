@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tinylib/msgp/gen"
@@ -331,22 +332,70 @@ func (fs *FileSet) parseFieldList(fl *ast.FieldList) []gen.StructField {
 	return out
 }
 
+func anyMatches(haystack []string, needle string) bool {
+	needle = strings.TrimSpace(needle)
+	for _, v := range haystack {
+		tr := strings.TrimSpace(v)
+		if tr == needle {
+			return true
+		}
+	}
+	return false
+}
+
 // translate *ast.Field into []gen.StructField
 func (fs *FileSet) getField(f *ast.Field) []gen.StructField {
 	sf := make([]gen.StructField, 1)
 	var extension bool
+	var omitempty bool
+	var deprecated bool
+	zebraId := -1
 	// parse tag; otherwise field name is field tag
 	if f.Tag != nil {
-		body := reflect.StructTag(strings.Trim(f.Tag.Value, "`")).Get("msg")
+		alltags := reflect.StructTag(strings.Trim(f.Tag.Value, "`"))
+		body := alltags.Get("msg")
 		tags := strings.Split(body, ",")
 		if len(tags) == 2 && tags[1] == "extension" {
 			extension = true
+		}
+		// must use msg:",omitempty" if no alt name, to
+		// mark a field omitempty. this avoids confusion
+		// with any alt name, which always comes first.
+		if len(tags) > 1 && anyMatches(tags[1:], "omitempty") {
+			omitempty = true
 		}
 		// ignore "-" fields
 		if tags[0] == "-" {
 			return nil
 		}
-		sf[0].FieldTag = tags[0]
+		if len(tags[0]) > 0 {
+			sf[0].FieldTag = tags[0]
+		}
+
+		// check deprecated
+		dep := alltags.Get("deprecated")
+		if dep == "true" {
+			deprecated = true
+			// ignore these too, but still need them to detect
+			// gaps in the zebra:id fields
+		}
+
+		// check zebra
+		zebra := alltags.Get("zebra")
+		if zebra != "" {
+			// must be a non-negative number
+			id, err := strconv.Atoi(zebra)
+			if err != nil || id < 0 {
+				where := ""
+				if len(f.Names) > 0 {
+					where = " on '" + f.Names[0].Name + "'"
+				}
+				fatalf("bad `zebra` tag%s, could not convert"+
+					" to non-zero integer: %v", where, err)
+				return nil
+			}
+			zebraId = id
+		}
 	}
 
 	ex := fs.parseExpr(f.Type)
@@ -366,9 +415,12 @@ func (fs *FileSet) getField(f *ast.Field) []gen.StructField {
 		sf = sf[0:0]
 		for _, nm := range f.Names {
 			sf = append(sf, gen.StructField{
-				FieldTag:  nm.Name,
-				FieldName: nm.Name,
-				FieldElem: ex.Copy(),
+				FieldTag:   nm.Name,
+				FieldName:  nm.Name,
+				FieldElem:  ex.Copy(),
+				Deprecated: deprecated,
+				OmitEmpty:  omitempty,
+				ZebraId:    zebraid,
 			})
 		}
 		return sf
