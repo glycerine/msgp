@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glycerine/msgp/cfg"
 	"github.com/glycerine/msgp/gen"
 	"github.com/ttacon/chalk"
 )
@@ -23,6 +24,7 @@ type FileSet struct {
 	Identities map[string]gen.Elem // processed from specs
 	Directives []string            // raw preprocessor directives
 	Imports    []*ast.ImportSpec   // imports
+	Cfg        *cfg.MsgpConfig
 }
 
 // File parses a file at the relative path
@@ -31,12 +33,14 @@ type FileSet struct {
 // directory will be parsed.
 // If unexport is false, only exported identifiers are included in the FileSet.
 // If the resulting FileSet would be empty, an error is returned.
-func File(name string, unexported bool) (*FileSet, error) {
+func File(c *cfg.MsgpConfig) (*FileSet, error) {
+	name := c.GoFile
 	pushstate(name)
 	defer popstate()
 	fs := &FileSet{
 		Specs:      make(map[string]ast.Expr),
 		Identities: make(map[string]gen.Elem),
+		Cfg:        c,
 	}
 
 	fset := token.NewFileSet()
@@ -61,7 +65,7 @@ func File(name string, unexported bool) (*FileSet, error) {
 		for _, fl := range one.Files {
 			pushstate(fl.Name.Name)
 			fs.Directives = append(fs.Directives, yieldComments(fl.Comments)...)
-			if !unexported {
+			if !c.Unexported {
 				ast.FileExports(fl)
 			}
 			fs.getTypeSpecs(fl)
@@ -74,7 +78,7 @@ func File(name string, unexported bool) (*FileSet, error) {
 		}
 		fs.Package = f.Name.Name
 		fs.Directives = yieldComments(f.Comments)
-		if !unexported {
+		if !c.Unexported {
 			ast.FileExports(f)
 		}
 		fs.getTypeSpecs(f)
