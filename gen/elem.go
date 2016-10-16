@@ -179,6 +179,12 @@ type Elem interface {
 	// or equal to 1.)
 	Complexity() int
 
+	// ZeroLiteral returns the literal expression
+	// needed to initialize an element named v to its
+	// zero value. e.g. 0 for numbers, "" for strings,
+	// or Truck{} for a struct Truck.
+	ZeroLiteral(v string) string
+
 	hidden()
 }
 
@@ -199,6 +205,11 @@ type Array struct {
 	Index string // index variable name
 	Size  string // array size
 	Els   Elem   // child
+}
+
+func (a *Array) ZeroLiteral(v string) string {
+	b := a.Els.ZeroLiteral(fmt.Sprintf("%s[i]", v))
+	return fmt.Sprintf(`for i := range %s { %s }`, v, b)
 }
 
 func (a *Array) SetVarname(s string) {
@@ -239,6 +250,16 @@ type Map struct {
 	Value  Elem   // value element
 }
 
+func (m *Map) ZeroLiteral(v string) string {
+	template := `
+	            if len(%s) > 0 {
+				for key, _ := range %s {
+					delete(%s, key)
+				}}
+`
+	return fmt.Sprintf(template, v, v, v)
+}
+
 func (m *Map) SetVarname(s string) {
 	m.common.SetVarname(s)
 ridx:
@@ -275,6 +296,10 @@ type Slice struct {
 	Els   Elem // The type of each element
 }
 
+func (a *Slice) ZeroLiteral(v string) string {
+	return fmt.Sprintf(`%s = %s[:0]`, v, v)
+}
+
 func (s *Slice) SetVarname(a string) {
 	s.common.SetVarname(a)
 	s.Index = randIdent()
@@ -307,6 +332,10 @@ func (s *Slice) Complexity() int {
 type Ptr struct {
 	common
 	Value Elem
+}
+
+func (a *Ptr) ZeroLiteral(v string) string {
+	return fmt.Sprintf(`%s = nil`, v)
 }
 
 func (s *Ptr) SetVarname(a string) {
@@ -360,8 +389,13 @@ func (s *Ptr) Needsinit() bool {
 
 type Struct struct {
 	common
-	Fields  []StructField // field list
-	AsTuple bool          // write as an array instead of a map
+	Fields           []StructField // field list
+	AsTuple          bool          // write as an array instead of a map
+	hasOmitEmptyTags bool
+}
+
+func (s *Struct) ZeroLiteral(v string) string {
+	return fmt.Sprintf(`%s = %s{}`, v, s.TypeName())
 }
 
 func (s *Struct) TypeName() string {
@@ -404,6 +438,7 @@ type StructField struct {
 	FieldTag  string // the string inside the `msg:""` tag
 	FieldName string // the name of the struct field
 	FieldElem Elem   // the field type
+	OmitEmpty bool   // if the tag `msg:",omitempty"` was found
 }
 
 // BaseElem is an element that
@@ -536,6 +571,30 @@ func (s *BaseElem) Resolved() bool {
 		return ok
 	}
 	return true
+}
+
+func (s *BaseElem) ZeroLiteral(v string) string {
+	switch s.Value {
+	case String:
+		return fmt.Sprintf(`%s = ""`, v)
+	case Float32, Float64, Complex64,
+		Complex128, Uint, Uint8, Uint16,
+		Uint32, Uint64, Byte, Int, Int8,
+		Int16, Int32, Int64:
+		return fmt.Sprintf(`%s = 0`, v)
+	case Bool:
+		return fmt.Sprintf(`%s = false`, v)
+	case Intf:
+		return fmt.Sprintf(`%s = nil`, v)
+	case Time:
+		return fmt.Sprintf(`%s = time.Time{}`, v)
+	case IDENT:
+		return fmt.Sprintf(`%s = %s{}`, v, s.TypeName())
+	case Bytes:
+		return fmt.Sprintf(`%s = %s[:0]`, v, v)
+	default:
+		return fmt.Sprintf("/*don't know how to zero value '%s' from BaseElem:'%#v'.*/", s.Value, s)
+	}
 }
 
 func (k Primitive) String() string {

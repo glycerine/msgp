@@ -3,11 +3,14 @@ package gen
 import (
 	"io"
 	"strconv"
+
+	"github.com/tinylib/msgp/cfg"
 )
 
-func unmarshal(w io.Writer) *unmarshalGen {
+func unmarshal(w io.Writer, cfg *cfg.MsgpConfig) *unmarshalGen {
 	return &unmarshalGen{
-		p: printer{w: w},
+		p:   printer{w: w},
+		cfg: cfg,
 	}
 }
 
@@ -15,6 +18,8 @@ type unmarshalGen struct {
 	passes
 	p        printer
 	hasfield bool
+	depth    int
+	cfg      *cfg.MsgpConfig
 }
 
 func (u *unmarshalGen) Method() Method { return Unmarshal }
@@ -39,6 +44,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	u.p.comment("UnmarshalMsg implements msgp.Unmarshaler")
 
 	u.p.printf("\nfunc (%s %s) UnmarshalMsg(bts []byte) (o []byte, err error) {", p.Varname(), methodReceiver(p))
+
 	next(u, p)
 	u.p.print("\no = bts")
 	u.p.nakedReturn()
@@ -56,6 +62,11 @@ func (u *unmarshalGen) assignAndCheck(name string, base string) {
 }
 
 func (u *unmarshalGen) gStruct(s *Struct) {
+	u.depth++
+	defer func() {
+		u.depth--
+	}()
+
 	if !u.p.ok() {
 		return
 	}
@@ -82,7 +93,10 @@ func (u *unmarshalGen) tuple(s *Struct) {
 	}
 }
 
+// TODO(jea): port empty field handling logic
+// from DecodeMsg to Unmarshal.
 func (u *unmarshalGen) mapstruct(s *Struct) {
+
 	u.needsField()
 	sz := randIdent()
 	u.p.declare(sz, u32)
@@ -168,6 +182,11 @@ func (u *unmarshalGen) gSlice(s *Slice) {
 }
 
 func (u *unmarshalGen) gMap(m *Map) {
+	u.depth++
+	defer func() {
+		u.depth--
+	}()
+
 	if !u.p.ok() {
 		return
 	}

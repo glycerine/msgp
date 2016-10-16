@@ -191,3 +191,60 @@ type FileHandle struct {
 
 type CustomInt int
 type CustomBytes []byte
+
+// Test omitempty tag
+type TestOmitEmpty struct {
+
+	// scalars
+	Name     string    `msg:",omitempty"`
+	BirthDay time.Time `msg:",omitempty"`
+	Phone    string    `msg:",omitempty"`
+	Siblings int       `msg:",omitempty"`
+	Spouse   bool      `msg:",omitempty"`
+	Money    float64   `msg:",omitempty"`
+
+	// slices
+	SliceName     []string    `msg:",omitempty"`
+	SliceBirthDay []time.Time `msg:",omitempty"`
+	SlicePhone    []string    `msg:",omitempty"`
+	SliceSiblings []int       `msg:",omitempty"`
+	SliceSpouse   []bool      `msg:",omitempty"`
+	SliceMoney    []float64   `msg:",omitempty"`
+
+	// arrays
+	ArrayName     [3]string    `msg:",omitempty"`
+	ArrayBirthDay [3]time.Time `msg:",omitempty"`
+	ArrayPhone    [3]string    `msg:",omitempty"`
+	ArraySiblings [3]int       `msg:",omitempty"`
+	ArraySpouse   [3]bool      `msg:",omitempty"`
+	ArrayMoney    [3]float64   `msg:",omitempty"`
+
+	// maps
+	MapStringString map[string]string      `msg:",omitempty"`
+	MapStringIface  map[string]interface{} `msg:",omitempty"`
+
+	// pointers
+	PtrName     *string    `msg:",omitempty"`
+	PtrBirthDay *time.Time `msg:",omitempty"`
+	PtrPhone    *string    `msg:",omitempty"`
+	PtrSiblings *int       `msg:",omitempty"`
+	PtrSpouse   *bool      `msg:",omitempty"`
+	PtrMoney    *float64   `msg:",omitempty"`
+
+	Inside1 OmitEmptyInside1 `msg:",omitempty"`
+}
+
+type OmitEmptyInside1 struct {
+	CountOfMonteCrisco int
+	Name               string           `msg:"name,omitempty"`
+	Inside2            OmitEmptyInside2 `msg:",omitempty"`
+}
+
+type OmitEmptyInside2 struct {
+	NameSuey string `msg:",omitempty"`
+}
+
+type OmitSimple struct {
+	CountDrocula int
+	Inside1      OmitEmptyInside1 `msg:",omitempty"`
+}
