@@ -113,14 +113,15 @@ func (e *encodeGen) structmap(s *Struct) {
 	if numOmitEmptyFields > 0 {
 		oe = true
 		om := emptyOmitter(&e.p, s.vname)
-		e.p.comment("some fields have the omitempty tag, honor it:")
+		e.p.printf("\n\n// honor the omitempty tag, track with isempty.\n")
 		e.p.printf("var isempty [%v]bool\n", nfields)
 		for i := range s.Fields {
 			if s.Fields[i].OmitEmpty {
 				e.p.printf("isempty[%v] = ", i)
 				next(om, s.Fields[i].FieldElem)
 			} else {
-				e.p.printf("isempty[%v]: %v not tagged as omitempty\n",
+				e.p.printf("// isempty[%v]: %v not "+
+					"tagged as omitempty\n",
 					i, s.Fields[i].FieldTag)
 			}
 		}
@@ -149,7 +150,7 @@ func (e *encodeGen) structmap(s *Struct) {
 			return
 		}
 		if oe && s.Fields[i].OmitEmpty {
-			e.p.printf("\n if !isempty[%v] {\n", i)
+			e.p.printf("\n if !isempty[%v] {", i)
 		}
 		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
 		e.p.printf("\n// write %q", s.Fields[i].FieldTag)

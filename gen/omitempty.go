@@ -17,43 +17,43 @@ type omitEmpty struct {
 }
 
 func (s *omitEmpty) gStruct(st *Struct) {
-	fmt.Printf("omitEmpty.gStruct(st=%#v) called.\n", st)
+	//fmt.Printf("omitEmpty.gStruct(st=%#v) called.\n", st)
 	s.p.printf("false\n")
 }
 
 func (s *omitEmpty) gPtr(p *Ptr) {
-	fmt.Printf("omitEmpty.gPtr(st=%#v) called.\n", p)
+	//fmt.Printf("omitEmpty.gPtr(st=%#v) called.\n", p)
 	s.p.printf("false\n")
 }
 
 func (s *omitEmpty) gSlice(sl *Slice) {
-	fmt.Printf("omitEmpty.gSlice(sl=%#v) called.\n", sl)
-	s.p.printf("%s", IsEmptySlice(s.varname, sl.vname))
+	//fmt.Printf("omitEmpty.gSlice(sl=%#v) called.\n", sl)
+	s.p.printf("%s", IsEmptySlice(sl.vname))
 }
 
 func (s *omitEmpty) gArray(a *Array) {
-	fmt.Printf("omitEmpty.gSlice(a=%#v) called.\n", a)
-	s.p.printf("%s", IsEmptySlice(s.varname, a.vname))
+	//fmt.Printf("omitEmpty.gArray(a=%#v) called.\n", a)
+	s.p.printf("%s", IsEmptySlice(a.vname))
 }
 
 func (s *omitEmpty) gMap(m *Map) {
-	fmt.Printf("omitEmpty.gSlice(m=%#v) called.\n", m)
-	s.p.printf("%s", IsEmptyMap(s.varname, m.vname))
+	//fmt.Printf("omitEmpty.gMap(m=%#v) called.\n", m)
+	s.p.printf("%s", IsEmptyMap(m.vname))
 }
 
 func (s *omitEmpty) gBase(b *BaseElem) {
-	fmt.Printf("omitEmpty.gBase(a=%#v) called.\n", b)
+	//fmt.Printf("omitEmpty.gBase(a=%#v) called.\n", b)
 	switch b.Value {
 	case Bytes:
-		s.p.printf("%s", IsEmptySlice(s.varname, b.Varname()))
+		s.p.printf("%s", IsEmptySlice(b.Varname()))
 	case String:
-		s.p.printf("%s", IsEmptyString(s.varname, b.Varname()))
+		s.p.printf("%s", IsEmptyString(b.Varname()))
 	case Float32, Float64, Complex64, Complex128, Uint, Uint8, Uint16, Uint32, Uint64, Byte, Int, Int8, Int16, Int32, Int64:
-		s.p.printf("%s", IsEmptyNumber(s.varname, b.Varname()))
+		s.p.printf("%s", IsEmptyNumber(b.Varname()))
 	case Bool:
-		s.p.printf("%s", IsEmptyBool(s.varname, b.Varname()))
+		s.p.printf("%s", IsEmptyBool(b.Varname()))
 	case Time: // time.Time
-		s.p.printf("%s", IsEmptyTime(s.varname, b.Varname()))
+		s.p.printf("%s", IsEmptyTime(b.Varname()))
 	case Intf: // interface{}
 		// assume, for now, never empty. rarely makes sense to serialize these.
 		fallthrough
@@ -62,34 +62,34 @@ func (s *omitEmpty) gBase(b *BaseElem) {
 	}
 }
 
-func IsEmptyNumber(v, f string) string {
-	return fmt.Sprintf("(%s.%s == 0) // number, omitempty\n",
-		v, f)
+func IsEmptyNumber(f string) string {
+	return fmt.Sprintf("(%s == 0) // number, omitempty\n",
+		f)
 }
 
-func IsEmptyString(v, f string) string {
-	return fmt.Sprintf("(len(%s.%s) == 0) // string, omitempty\n",
-		v, f)
+func IsEmptyString(f string) string {
+	return fmt.Sprintf("(len(%s) == 0) // string, omitempty\n",
+		f)
 }
 
-func IsEmptyMap(v, f string) string {
-	return fmt.Sprintf("(len(%s.%s) == 0) // map, omitempty\n",
-		v, f)
+func IsEmptyMap(f string) string {
+	return fmt.Sprintf("(len(%s) == 0) // map, omitempty\n",
+		f)
 }
 
-func IsEmptyBool(v, f string) string {
-	return fmt.Sprintf("(!%s.%s) // bool, omitempty\n",
-		v, f)
+func IsEmptyBool(f string) string {
+	return fmt.Sprintf("(!%s) // bool, omitempty\n",
+		f)
 }
 
-func IsEmptySlice(v, f string) string {
-	return fmt.Sprintf("(len(%s.%s) == 0) // slice/array, omitempty\n",
-		v, f)
+func IsEmptySlice(f string) string {
+	return fmt.Sprintf("(len(%s) == 0) // slice/array, omitempty\n",
+		f)
 }
 
-func IsEmptyTime(v, f string) string {
-	return fmt.Sprintf("(%s.%s.IsZero()) // time.Time, omitempty\n",
-		v, f)
+func IsEmptyTime(f string) string {
+	return fmt.Sprintf("(%s.IsZero()) // time.Time, omitempty\n",
+		f)
 }
 
 func (s *Struct) NumOmitEmptyFields() int {

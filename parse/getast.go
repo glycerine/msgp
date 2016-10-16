@@ -409,6 +409,10 @@ func (fs *FileSet) getField(f *ast.Field) []gen.StructField {
 		return nil
 	}
 
+	sf[0].Deprecated = deprecated
+	sf[0].OmitEmpty = omitempty
+	sf[0].ZebraId = zebraId
+
 	// parse field name
 	switch len(f.Names) {
 	case 0:
