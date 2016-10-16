@@ -366,7 +366,9 @@ func (fs *FileSet) getField(f *ast.Field) []gen.StructField {
 		// mark a field omitempty. this avoids confusion
 		// with any alt name, which always comes first.
 		if len(tags) > 1 && anyMatches(tags[1:], "omitempty") {
-			omitempty = true
+			if !fs.Cfg.IgnoreOmitEmpty {
+				omitempty = true
+			}
 		}
 		// ignore "-" fields
 		if tags[0] == "-" {

@@ -5,13 +5,13 @@ import (
 )
 
 type MsgpConfig struct {
-	Out        string
-	GoFile     string
-	Encode     bool
-	Marshal    bool
-	Tests      bool
-	Unexported bool
-	IgnoreOmit bool
+	Out             string
+	GoFile          string
+	Encode          bool
+	Marshal         bool
+	Tests           bool
+	Unexported      bool
+	IgnoreOmitEmpty bool
 }
 
 // call DefineFlags before myflags.Parse()
@@ -22,7 +22,7 @@ func (c *MsgpConfig) DefineFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&c.Marshal, "marshal", true, "create Marshal and Unmarshal methods")
 	fs.BoolVar(&c.Tests, "tests", true, "create tests and benchmarks")
 	fs.BoolVar(&c.Unexported, "unexported", false, "also process unexported types")
-	fs.BoolVar(&c.IgnoreOmit, "ignore-omitempty-tag", false, "disrespect the omitempty")
+	fs.BoolVar(&c.IgnoreOmitEmpty, "ignore-omitempty-tag", false, "disrespect the msgp:\",omitempty\" tag on struct fields, always serializing empty fields.")
 }
 
 // call c.ValidateConfig() after myflags.Parse()
