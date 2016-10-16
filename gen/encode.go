@@ -115,23 +115,15 @@ func (e *encodeGen) structmap(s *Struct) {
 		om := emptyOmitter(&e.p, s.vname)
 		e.p.printf("\n\n// honor the omitempty tag, track with isempty.\n")
 		e.p.printf("var isempty [%v]bool\n", nfields)
+		e.p.printf("var fieldsInUse uint32 = %v\n", nfields)
 		for i := range s.Fields {
 			if s.Fields[i].OmitEmpty {
 				e.p.printf("isempty[%v] = ", i)
 				next(om, s.Fields[i].FieldElem)
-			} else {
-				e.p.printf("// isempty[%v]: %v not "+
-					"tagged as omitempty\n",
-					i, s.Fields[i].FieldTag)
+				e.p.printf("if isempty[%v] { fieldsInUse-- }\n", i)
 			}
 		}
 		e.p.printf(`
-	var fieldsInUse uint32
-	for i := range isempty {
-		if !isempty[i] {
-			fieldsInUse++
-		}
-	}
 	// map header
 	err = en.WriteMapHeader(fieldsInUse)
 	if err != nil {
