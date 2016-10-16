@@ -38,8 +38,6 @@ func (e *fieldsEmpty) Execute(p Elem) error {
 }
 
 func (e *fieldsEmpty) gStruct(s *Struct) {
-	fmt.Printf("fieldsEmpty.gStruct() called.\n")
-
 	e.p.printf("\n\n// FieldsNotEmpty must be provided with an isempty slice\n")
 	e.p.printf("// which points to a zero valued array whose size matches\n")
 	e.p.printf("// the number of fields in our receiver. We will write\n")
@@ -52,6 +50,18 @@ func (e *fieldsEmpty) gStruct(s *Struct) {
 	e.p.printf("func (%s) FieldsNotEmpty(isempty []bool) uint32 {", e.recvr)
 
 	nfields := len(s.Fields)
+	numOE := 0
+	for i := range s.Fields {
+		if s.Fields[i].OmitEmpty {
+			numOE++
+		}
+	}
+	if numOE == 0 {
+		// no fields tagged with omitempty, just return the full field count.
+		e.p.printf("\nreturn %v }\n", nfields)
+		return
+	}
+
 	om := emptyOmitter(&e.p, s.vname)
 
 	e.p.printf("if len(isempty) == 0 { return %v }\n", nfields)
