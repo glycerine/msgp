@@ -61,10 +61,10 @@ func main() {
 
 	var mode gen.Method
 	if c.Encode {
-		mode |= (gen.Encode | gen.Decode | gen.Size)
+		mode |= (gen.Encode | gen.Decode | gen.Size | gen.FieldsEmpty)
 	}
 	if c.Marshal {
-		mode |= (gen.Marshal | gen.Unmarshal | gen.Size)
+		mode |= (gen.Marshal | gen.Unmarshal | gen.Size | gen.FieldsEmpty)
 	}
 	if c.Tests {
 		mode |= gen.Test

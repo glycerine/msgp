@@ -40,18 +40,19 @@ func (e *fieldsEmpty) Execute(p Elem) error {
 func (e *fieldsEmpty) gStruct(s *Struct) {
 	fmt.Printf("fieldsEmpty.gStruct() called.\n")
 
-	e.p.printf("\n\n// FieldsNotEmpty fills the isempty slice,\n")
-	e.p.printf("// which should point to an array whose size matches\n")
+	e.p.printf("\n\n// FieldsNotEmpty must be provided with an isempty slice\n")
+	e.p.printf("// which points to a zero valued array whose size matches\n")
 	e.p.printf("// the number of fields in our receiver. We will write\n")
 	e.p.printf("// true for isemtpy[i] if the i-th field of our receiver\n")
 	e.p.printf("// is empty (nil pointer, length zero map/string/slice,\n")
-	e.p.printf("// or a 0 number). Supports the omitempty tag.\n")
+	e.p.printf("// or a 0 number). We support the omitempty tag.\n")
 	e.p.printf("// We return the count of non-empty fields.\n")
-	e.p.printf("func (%s %s) FieldsNotEmpty(isempty []bool) uint32 {", e.recvr)
+	e.p.printf("func (%s) FieldsNotEmpty(isempty []bool) uint32 {", e.recvr)
 
 	nfields := len(s.Fields)
 	om := emptyOmitter(&e.p, s.vname)
 
+	e.p.printf("if len(isempty) == 0 { return %v }\n", nfields)
 	e.p.printf("var fieldsInUse uint32 = %v\n", nfields)
 	for i := range s.Fields {
 		if s.Fields[i].OmitEmpty {

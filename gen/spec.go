@@ -42,6 +42,8 @@ func (m Method) String() string {
 		return "size"
 	case Test:
 		return "test"
+	case FieldsEmpty:
+		return "fieldsempty"
 	default:
 		// return e.g. "decode+encode+test"
 		modes := [...]Method{Decode, Encode, Marshal, Unmarshal, Size, Test}
@@ -76,6 +78,8 @@ func strtoMeth(s string) Method {
 		return Size
 	case "test":
 		return Test
+	case "fieldsempty":
+		return FieldsEmpty
 	default:
 		return 0
 	}
