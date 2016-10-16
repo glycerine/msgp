@@ -47,6 +47,8 @@ func (e *fieldsEmpty) gStruct(s *Struct) {
 	e.p.printf("// is empty (nil pointer, length zero map/string/slice,\n")
 	e.p.printf("// or a 0 number). We support the omitempty tag.\n")
 	e.p.printf("// We return the count of non-empty fields.\n")
+	e.p.printf("// If len(isempty) == 0 or if no fields\n")
+	e.p.printf("// are marked omitempty, we return the count of all fields.\n")
 	e.p.printf("func (%s) FieldsNotEmpty(isempty []bool) uint32 {", e.recvr)
 
 	nfields := len(s.Fields)
