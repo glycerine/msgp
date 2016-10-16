@@ -112,25 +112,13 @@ func (e *encodeGen) structmap(s *Struct) {
 	var data []byte
 	if numOmitEmptyFields > 0 {
 		oe = true
-		om := emptyOmitter(&e.p, s.vname)
 		e.p.printf("\n\n// honor the omitempty tag, track with isempty.\n")
 		e.p.printf("var isempty [%v]bool\n", nfields)
-		e.p.printf("var fieldsInUse uint32 = %v\n", nfields)
-		for i := range s.Fields {
-			if s.Fields[i].OmitEmpty {
-				e.p.printf("isempty[%v] = ", i)
-				next(om, s.Fields[i].FieldElem)
-				e.p.printf("if isempty[%v] { fieldsInUse-- }\n", i)
-			}
-		}
-		e.p.printf(`
-	// map header
-	err = en.WriteMapHeader(fieldsInUse)
-	if err != nil {
-		return err
-	}
-`)
-
+		e.p.printf("fieldsInUse := %v.FieldsNotEmpty(isempty[:])\n", s.vname)
+		e.p.printf("\n// map header\n")
+		e.p.printf("	err = en.WriteMapHeader(fieldsInUse)\n")
+		e.p.printf("	if err != nil {\n")
+		e.p.printf("		return err\n}\n")
 	} else {
 		data = msgp.AppendMapHeader(nil, uint32(nfields))
 		e.p.printf("\n// map header, size %d", nfields)
