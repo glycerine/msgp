@@ -193,7 +193,7 @@ type CustomInt int
 type CustomBytes []byte
 
 // Test omitempty tag
-type TestOmitEmtpy struct {
+type TestOmitEmpty struct {
 
 	// scalars
 	Name     string    `msg:",omitempty"`
