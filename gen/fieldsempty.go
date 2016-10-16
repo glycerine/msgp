@@ -38,7 +38,7 @@ func (e *fieldsEmpty) Execute(p Elem) error {
 }
 
 func (e *fieldsEmpty) gStruct(s *Struct) {
-	e.p.printf("// FieldsNotEmpty implements the OmitEmptySupport interface.\n")
+	e.p.printf("// FieldsNotEmpty implements msgp.OmitEmptySupport\n")
 	e.p.printf("func (%s) FieldsNotEmpty(isempty []bool) uint32 {", e.recvr)
 
 	nfields := len(s.Fields)
@@ -53,6 +53,9 @@ func (e *fieldsEmpty) gStruct(s *Struct) {
 		e.p.printf("\nreturn %v }\n", nfields)
 		return
 	}
+
+	// remember this to avoid recomputing it in other passes.
+	s.hasOmitEmptyTags = true
 
 	om := emptyOmitter(&e.p, s.vname)
 

@@ -360,8 +360,9 @@ func (s *Ptr) Needsinit() bool {
 
 type Struct struct {
 	common
-	Fields  []StructField // field list
-	AsTuple bool          // write as an array instead of a map
+	Fields           []StructField // field list
+	AsTuple          bool          // write as an array instead of a map
+	hasOmitEmptyTags bool
 }
 
 func (s *Struct) TypeName() string {

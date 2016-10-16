@@ -102,19 +102,11 @@ func (e *encodeGen) appendraw(bts []byte) {
 
 func (e *encodeGen) structmap(s *Struct) {
 	nfields := len(s.Fields)
-	numOmitEmptyFields := 0
-	oe := false
-	for i := range s.Fields {
-		if s.Fields[i].OmitEmpty {
-			numOmitEmptyFields++
-		}
-	}
 	var data []byte
-	if numOmitEmptyFields > 0 {
-		oe = true
-		e.p.printf("\n\n// honor the omitempty tag, track with isempty.\n")
-		e.p.printf("var isempty [%v]bool\n", nfields)
-		e.p.printf("fieldsInUse := %v.FieldsNotEmpty(isempty[:])\n", s.vname)
+	if s.hasOmitEmptyTags {
+		e.p.printf("\n\n// honor the omitempty tags\n")
+		e.p.printf("var empty [%v]bool\n", nfields)
+		e.p.printf("fieldsInUse := %v.FieldsNotEmpty(empty[:])\n", s.vname)
 		e.p.printf("\n// map header\n")
 		e.p.printf("	err = en.WriteMapHeader(fieldsInUse)\n")
 		e.p.printf("	if err != nil {\n")
@@ -129,15 +121,17 @@ func (e *encodeGen) structmap(s *Struct) {
 		if !e.p.ok() {
 			return
 		}
-		if oe && s.Fields[i].OmitEmpty {
-			e.p.printf("\n if !isempty[%v] {", i)
+
+		if s.hasOmitEmptyTags && s.Fields[i].OmitEmpty {
+			e.p.printf("\n if !empty[%v] {", i)
 		}
+
 		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
 		e.p.printf("\n// write %q", s.Fields[i].FieldTag)
 		e.Fuse(data)
 		next(e, s.Fields[i].FieldElem)
 
-		if oe && s.Fields[i].OmitEmpty {
+		if s.hasOmitEmptyTags && s.Fields[i].OmitEmpty {
 			e.p.printf("\n }\n")
 		}
 	}

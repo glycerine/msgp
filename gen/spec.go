@@ -111,6 +111,7 @@ func NewPrinter(m Method, out io.Writer, tests io.Writer) *Printer {
 	if m.isset(Decode) {
 		gens = append(gens, decode(out))
 	}
+	// must run FieldsEmpty before Encode/Marshal, to set Struct.hasOmitEmptyTags
 	if m.isset(FieldsEmpty) {
 		gens = append(gens, fieldsempty(out))
 	}
