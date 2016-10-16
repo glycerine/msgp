@@ -843,3 +843,18 @@ func GuessSize(i interface{}) int {
 		return 512
 	}
 }
+
+// OmitEmptySupport enables struct fields to be tagged with omitempty.
+type OmitEmptySupport interface {
+
+	// FieldsNotEmpty must be provided with an isempty slice
+	// which points to a zero valued array whose size matches
+	// the number of fields in our receiver. We will write
+	// true for isemtpy[i] if the i-th field of our receiver
+	// is empty (nil pointer, length zero map/string/slice,
+	// or a 0 number). We support the omitempty tag.
+	// We return the count of non-empty fields.
+	// If len(isempty) == 0 or if no fields
+	// are marked omitempty, we return the count of all fields.
+	FieldsNotEmpty(isempty []bool) uint32
+}
