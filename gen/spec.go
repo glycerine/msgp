@@ -42,6 +42,8 @@ func (m Method) String() string {
 		return "size"
 	case Test:
 		return "test"
+	case FieldsEmpty:
+		return "fieldsempty"
 	default:
 		// return e.g. "decode+encode+test"
 		modes := [...]Method{Decode, Encode, Marshal, Unmarshal, Size, Test}
@@ -76,21 +78,25 @@ func strtoMeth(s string) Method {
 		return Size
 	case "test":
 		return Test
+	case "fieldsempty":
+		return FieldsEmpty
 	default:
 		return 0
 	}
 }
 
 const (
-	Decode      Method                       = 1 << iota // msgp.Decodable
-	Encode                                               // msgp.Encodable
-	Marshal                                              // msgp.Marshaler
-	Unmarshal                                            // msgp.Unmarshaler
-	Size                                                 // msgp.Sizer
-	Test                                                 // generate tests
-	invalidmeth                                          // this isn't a method
-	encodetest  = Encode | Decode | Test                 // tests for Encodable and Decodable
-	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
+	Decode      Method = 1 << iota // msgp.Decodable
+	Encode                         // msgp.Encodable
+	Marshal                        // msgp.Marshaler
+	Unmarshal                      // msgp.Unmarshaler
+	Size                           // msgp.Sizer
+	Test                           // generate tests
+	FieldsEmpty                    // support omitempty tag
+	invalidmeth                    // this isn't a method
+
+	encodetest  = Encode | Decode | Test | FieldsEmpty     // tests for Encodable and Decodable
+	marshaltest = Marshal | Unmarshal | Test | FieldsEmpty // tests for Marshaler and Unmarshaler
 )
 
 type Printer struct {
@@ -101,9 +107,13 @@ func NewPrinter(m Method, out io.Writer, tests io.Writer) *Printer {
 	if m.isset(Test) && tests == nil {
 		panic("cannot print tests with 'nil' tests argument!")
 	}
-	gens := make([]generator, 0, 7)
+	gens := make([]generator, 0, 8)
 	if m.isset(Decode) {
 		gens = append(gens, decode(out))
+	}
+	// must run FieldsEmpty before Encode/Marshal, to set Struct.hasOmitEmptyTags
+	if m.isset(FieldsEmpty) {
+		gens = append(gens, fieldsempty(out))
 	}
 	if m.isset(Encode) {
 		gens = append(gens, encode(out))
