@@ -102,7 +102,7 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 
 /* func (d *decodeGen) structAsMap(s *Struct):
 
- // missing (empty) field handling logic, in pseudo code:
+ // missing (empty) field handling logic, in almost-not-pseudo code:
  //
  // The secret to nil handling is to keep the logic
  // the same whether the field is missing or nil on
@@ -130,7 +130,14 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 	needNull -= sz // compute number of nil fields we'll need to set.
 
 done_with_struct:
+
 	for sz > 0 || needNull > 0 {
+
+         // First phase: do all the available fields.
+         // Only after all available have been handled
+         // do we embark on the second phase: missing
+         // field handling.
+
 		if sz > 0 {
 			sz--
 			field, err = dc.ReadMapKeyPtr()
