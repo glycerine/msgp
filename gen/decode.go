@@ -102,75 +102,78 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 
 /* func (d *decodeGen) structAsMap(s *Struct):
 
- // missing (empty) field handling logic, in almost-not-pseudo code:
- //
- // The secret to nil handling is to keep the logic
- // the same whether the field is missing or nil on
- // the wire. To do so we use the Reader.PushAlwaysNil()
- // method to tell the Reader to pretend to supply
- // only nils until further notice (which comes
- // from dc.PopAlwaysNil() emptying the LIFO).
+    // Missing (empty) field handling logic:
+    //
+    // The approach to missing field handling is to
+    // keep the logic the same whether the field is
+    // missing or nil on the wire. To do so we use
+    // the Reader.PushAlwaysNil() method to tell
+    // the Reader to pretend to supply
+    // only nils until further notice. The further
+    // notice comes from the terminating dc.PopAlwaysNil()
+    // calls emptying the LIFO. The stack is
+    // needed because multiple struct decodes may
+    // be nested due to inlining.
 
-	var fieldOrder = []string{"Name", "BirthDay"}
-	const maxFields = 2
+	var fieldOrder_ = []string{"Name", "BirthDay"}
+	const maxFields_ = 2
 
-	var needNull uint32 = maxFields
-	var nextNull int32 = -1
-
-	var found [maxFields]bool
-	var field []byte
-    _ = field
-	var sz uint32
-	var curField string
-
-	sz, err = dc.ReadMapHeader()
+    totalEncodedFields_, err := dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	needNull -= sz // compute number of nil fields we'll need to set.
+	encodedFieldsLeft_ := totalEncodedFields_
+    missingFieldsLeft_ := maxFields_ - totalEncodedFields_
 
-done_with_struct:
+	var nextMiss_ int32 = -1
+	var found_ [maxFields_]bool
+	var field []byte
+    _ = field
+	var curField_ string
 
-	for sz > 0 || needNull > 0 {
+ doneWithStruct_:
+	for encodedFieldsLeft_ > 0 || missingFieldsLeft_ > 0 {
 
          // First phase: do all the available fields.
          // Only after all available have been handled
          // do we embark on the second phase: missing
          // field handling.
 
-		if sz > 0 {
-			sz--
+		if encodedFieldsLeft_ > 0 {
+			encodedFieldsLeft_--
 			field, err = dc.ReadMapKeyPtr()
 			if err != nil {
 				return
 			}
-			curField = msgp.UnsafeString(field)
+			curField_ = msgp.UnsafeString(field)
 		} else {
-			//missing field handling
-			if nextNull < 0 {
+			//missing fields need handling
+			if nextMiss_ < 0 {
+                // tell the reader to only give us Nils
+                // until further notice.
 				dc.PushAlwaysNil()
-				nextNull = 0
+				nextMiss_ = 0
 			}
-			for nextNull < maxFields && found[nextNull] {
-				nextNull++
+			for nextMiss_ < maxFields_ && found_[nextMiss_] {
+				nextMiss_++
 			}
-			if nextNull == maxFields {
+			if nextMiss_ == maxFields_ {
 				// filled all the empty fields!
-				break done_with_struct
+				break doneWithStruct_
 			}
-			needNull--
-			curField = fieldOrder[nextNull]
+			missingFieldsLeft_--
+			curField_ = fieldOrder_[nextMiss_]
 		}
 
-		switch curField {
+		switch curField_ {
 		case "Name":
-			found[0] = true
+			found_[0] = true
 			z.Name, err = dc.ReadString()
 			if err != nil {
 				return
 			}
 		case "BirthDay":
-			found[1] = true
+			found_[1] = true
 			z.BirthDay, err = dc.ReadTime()
 			if err != nil {
 				return
@@ -179,7 +182,7 @@ done_with_struct:
         } // end switch curField
 
     } // end for
-	if nextNull_ztky != -1 {
+	if nextMiss_ != -1 {
 		dc.PopAlwaysNil()
 	}
 
