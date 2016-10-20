@@ -222,8 +222,9 @@ func (u *unmarshalGen) gMap(m *Map) {
 }
 
 func (u *unmarshalGen) gPtr(p *Ptr) {
-	u.p.printf("\nif msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname())
+	u.p.printf("\nif nt.AlwaysNil { %s = nil } else { if msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname(), p.Varname())
 	u.p.initPtr(p)
 	next(u, p.Value)
+	u.p.closeblock()
 	u.p.closeblock()
 }

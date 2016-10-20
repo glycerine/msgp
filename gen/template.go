@@ -125,8 +125,7 @@ doneWithStruct_:
 		} else {
 			//missing fields need handling
 			if nextMiss_ < 0 {
-				// tell the reader to only give us Nils
-				// until further notice.
+				// set bts to contain just mnil (0xc0)
 				bts = nt.PushAlwaysNil(bts)
 				nextMiss_ = 0
 			}
