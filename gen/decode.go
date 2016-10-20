@@ -48,8 +48,6 @@ func (d *decodeGen) Execute(p Elem) error {
 		return nil
 	}
 
-	s, isStruct := p.(*Struct)
-
 	d.p.comment("DecodeMsg implements msgp.Decodable")
 	d.p.comment("We treat empty fields as if we read a Nil from the wire.")
 	d.p.printf("\nfunc (%s %s) DecodeMsg(dc *msgp.Reader) (err error) {", p.Varname(), methodReceiver(p))
@@ -57,10 +55,6 @@ func (d *decodeGen) Execute(p Elem) error {
 	// next will increment k, but we want the first, top level DecodeMsg
 	// to refer to this same k ...
 	next(d, p)
-
-	if isStruct && s.AsTuple {
-		d.p.printf("\n dc.AlwaysNil = false\n")
-	}
 	d.p.nakedReturn()
 	unsetReceiver(p)
 	return d.p.err
@@ -131,9 +125,6 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	k := genSerial()
 	tmpl, nStr := genDecodeMsgTemplate(k)
 
-	// allocate the fieldOrder tracker once, at program startup.
-	// This happens just before the struct-specific DecodeMsg method.
-	//
 	fieldOrder := fmt.Sprintf("\n var decodeMsgFieldOrder%s = []string{", nStr)
 	for i := range s.Fields {
 		fieldOrder += fmt.Sprintf("%q,", s.Fields[i].FieldTag)

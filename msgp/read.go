@@ -140,14 +140,18 @@ type Reader struct {
 	R       *fwd.Reader
 	scratch []byte
 
-	// simulate getting nils on the wire
-	AlwaysNil     bool
-	lifoAlwaysNil []bool
+	NilTracker
 }
 
-func (r *Reader) AlwaysNilString() string {
+type NilTracker struct {
+	// simulate getting nils on the wire
+	AlwaysNil     bool
+	LifoAlwaysNil []bool
+}
+
+func (r *NilTracker) AlwaysNilString() string {
 	s := "bottom: "
-	for _, v := range r.lifoAlwaysNil {
+	for _, v := range r.LifoAlwaysNil {
 		if v {
 			s += "T"
 		} else {
@@ -157,22 +161,23 @@ func (r *Reader) AlwaysNilString() string {
 	return s
 }
 
-func (r *Reader) PushAlwaysNil() {
+func (r *NilTracker) PushAlwaysNil() {
 	// save current state
-	r.lifoAlwaysNil = append(r.lifoAlwaysNil, r.AlwaysNil)
+	r.LifoAlwaysNil = append(r.LifoAlwaysNil, r.AlwaysNil)
 	// set reader r to always return nils
 	r.AlwaysNil = true
 }
 
-func (r *Reader) PopAlwaysNil() {
-	n := len(r.lifoAlwaysNil)
+func (r *NilTracker) PopAlwaysNil() {
+	n := len(r.LifoAlwaysNil)
 	//fmt.Printf("\n Reader.PopAlwaysNil() called! qlen = %d, '%s'\n",
 	//	n, r.AlwaysNilString())
 	if n == 0 {
 		panic("PopAlwaysNil called on empty lifo")
 		return
 	}
-	a := r.lifoAlwaysNil[n-1]
+	a := r.LifoAlwaysNil[n-1]
+	r.LifoAlwaysNil = r.LifoAlwaysNil[:n-1]
 	r.AlwaysNil = a
 }
 

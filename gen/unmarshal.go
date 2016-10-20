@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 
@@ -93,29 +94,43 @@ func (u *unmarshalGen) tuple(s *Struct) {
 	}
 }
 
-// TODO(jea): port empty field handling logic
-// from DecodeMsg to Unmarshal.
 func (u *unmarshalGen) mapstruct(s *Struct) {
-
+	n := len(s.Fields)
+	if n == 0 {
+		return
+	}
 	u.needsField()
-	sz := randIdent()
-	u.p.declare(sz, u32)
-	u.assignAndCheck(sz, mapHeader)
+	k := genSerial()
+	tmpl, nStr := genUnmarshalMsgTemplate(k)
 
-	u.p.printf("\nfor %s > 0 {", sz)
-	u.p.printf("\n%s--; field, bts, err = msgp.ReadMapKeyZC(bts)", sz)
-	u.p.print(errcheck)
-	u.p.print("\nswitch msgp.UnsafeString(field) {")
+	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { nt.PushAlwaysNil(bts[1:]) }\n")
+	fieldOrder := fmt.Sprintf("\n var unmarshalMsgFieldOrder%s = []string{", nStr)
 	for i := range s.Fields {
+		fieldOrder += fmt.Sprintf("%q,", s.Fields[i].FieldTag)
+	}
+	fieldOrder += "}\n"
+	u.p.printf("%s", fieldOrder)
+
+	u.p.printf("const maxFields%s = %d\n", nStr, n)
+
+	found := "found" + nStr
+	u.p.printf(tmpl)
+
+	for i := range s.Fields {
+		u.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
+		u.p.printf("\n%s[%d]=true;", found, i)
+		u.depth++
+		next(u, s.Fields[i].FieldElem)
+		u.depth--
 		if !u.p.ok() {
 			return
 		}
-		u.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
-		next(u, s.Fields[i].FieldElem)
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
 	u.p.print(errcheck)
 	u.p.print("\n}\n}") // close switch and for loop
+
+	u.p.printf("\n if nextMiss%s != -1 { bts = nt.PopAlwaysNil(); }\n", nStr)
 }
 
 func (u *unmarshalGen) gBase(b *BaseElem) {

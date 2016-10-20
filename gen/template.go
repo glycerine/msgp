@@ -94,3 +94,58 @@ func genDecodeMsgTemplate(n int) (template, nStr string) {
 	nStr = fmt.Sprintf("%v", n)
 	return strings.Replace(templateDecodeMsg, `_`, nStr, -1), nStr
 }
+
+var templateUnmarshalMsg = `
+	// -- templateUnmarshalMsg starts here--
+    var totalEncodedFields_ uint32
+    if !nt.AlwaysNil {
+	    totalEncodedFields_, bts, err = msgp.ReadMapHeaderBytes(bts)
+	    if err != nil {
+	  	  return
+	    }
+    }
+	encodedFieldsLeft_ := totalEncodedFields_
+	missingFieldsLeft_ := maxFields_ - totalEncodedFields_
+
+	var nextMiss_ int32 = -1
+	var found_ [maxFields_]bool
+	var curField_ string
+
+doneWithStruct_:
+	// First fill all the encoded fields, then
+	// treat the remaining, missing fields, as Nil.
+	for encodedFieldsLeft_ > 0 || missingFieldsLeft_ > 0 {
+		if encodedFieldsLeft_ > 0 {
+			encodedFieldsLeft_--
+			field, bts, err = msgp.ReadMapKeyZC(bts)
+			if err != nil {
+				return
+			}
+			curField_ = msgp.UnsafeString(field)
+		} else {
+			//missing fields need handling
+			if nextMiss_ < 0 {
+				// tell the reader to only give us Nils
+				// until further notice.
+				bts = nt.PushAlwaysNil(bts)
+				nextMiss_ = 0
+			}
+			for nextMiss_ < maxFields_ && found_[nextMiss_] {
+				nextMiss_++
+			}
+			if nextMiss_ == maxFields_ {
+				// filled all the empty fields!
+				break doneWithStruct_
+			}
+			missingFieldsLeft_--
+			curField_ = unmarshalMsgFieldOrder_[nextMiss_]
+		}
+
+		switch curField_ {
+		// -- templateUnmarshalMsg ends here --
+`
+
+func genUnmarshalMsgTemplate(n int) (template, nStr string) {
+	nStr = fmt.Sprintf("%v", n)
+	return strings.Replace(templateUnmarshalMsg, `_`, nStr, -1), nStr
+}
