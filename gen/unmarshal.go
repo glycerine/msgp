@@ -45,7 +45,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	u.p.comment("UnmarshalMsg implements msgp.Unmarshaler")
 
 	u.p.printf("\nfunc (%s %s) UnmarshalMsg(bts []byte) (o []byte, err error) {", p.Varname(), methodReceiver(p))
-
+	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { nt.PushAlwaysNil(bts[1:]) }\n")
 	next(u, p)
 	u.p.print("\no = bts")
 	u.p.nakedReturn()
@@ -103,7 +103,6 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 	k := genSerial()
 	tmpl, nStr := genUnmarshalMsgTemplate(k)
 
-	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { nt.PushAlwaysNil(bts[1:]) }\n")
 	fieldOrder := fmt.Sprintf("\n var unmarshalMsgFieldOrder%s = []string{", nStr)
 	for i := range s.Fields {
 		fieldOrder += fmt.Sprintf("%q,", s.Fields[i].FieldTag)
@@ -149,13 +148,21 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 
 	switch b.Value {
 	case Bytes:
-		u.p.printf("\n%s, bts, err = msgp.ReadBytesBytes(bts, %s)", refname, lowered)
+		u.p.printf("\n if nt.AlwaysNil { %s = %s[:0]} else { %s, bts, err = msgp.ReadBytesBytes(bts, %s)\n", refname, refname, refname, lowered)
+		u.p.print(errcheck)
+		u.p.closeblock()
 	case Ext:
-		u.p.printf("\nbts, err = msgp.ReadExtensionBytes(bts, %s)", lowered)
+		u.p.printf("\n if nt.AlwaysNil { // what here?\n} else {bts, err = msgp.ReadExtensionBytes(bts, %s)\n", lowered)
+		u.p.print(errcheck)
+		u.p.closeblock()
 	case IDENT:
-		u.p.printf("\nbts, err = %s.UnmarshalMsg(bts)", lowered)
+		u.p.printf("\n if nt.AlwaysNil { %s.UnmarshalMsg(msgp.OnlyNilSlice) } else { bts, err = %s.UnmarshalMsg(bts)\n", lowered, lowered)
+		u.p.print(errcheck)
+		u.p.closeblock()
 	default:
-		u.p.printf("\n%s, bts, err = msgp.Read%sBytes(bts)", refname, b.BaseName())
+		u.p.printf("\n if nt.AlwaysNil { // what here? \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", refname, b.BaseName())
+		u.p.print(errcheck)
+		u.p.closeblock()
 	}
 	if b.Convert {
 		// close 'tmp' block
