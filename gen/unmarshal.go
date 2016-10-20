@@ -168,8 +168,6 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 		// close 'tmp' block
 		u.p.printf("\n%s = %s(%s)\n}", b.Varname(), b.FromBase(), refname)
 	}
-
-	u.p.print(errcheck)
 }
 
 func (u *unmarshalGen) gArray(a *Array) {
@@ -196,11 +194,14 @@ func (u *unmarshalGen) gSlice(s *Slice) {
 	if !u.p.ok() {
 		return
 	}
+	u.p.printf("\n if nt.AlwaysNil { %s \n} else {\n",
+		s.ZeroLiteral(`(`+s.Varname()+`)`))
 	sz := randIdent()
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, arrayHeader)
 	u.p.resizeSlice(sz, s)
 	u.p.rangeBlock(s.Index, s.Varname(), u, s.Els)
+	u.p.closeblock()
 }
 
 func (u *unmarshalGen) gMap(m *Map) {
@@ -212,6 +213,8 @@ func (u *unmarshalGen) gMap(m *Map) {
 	if !u.p.ok() {
 		return
 	}
+	u.p.printf("\n if nt.AlwaysNil { %s \n} else {\n",
+		m.ZeroLiteral(m.Varname()))
 	sz := randIdent()
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, mapHeader)
@@ -225,6 +228,7 @@ func (u *unmarshalGen) gMap(m *Map) {
 	u.assignAndCheck(m.Keyidx, stringTyp)
 	next(u, m.Value)
 	u.p.mapAssign(m)
+	u.p.closeblock()
 	u.p.closeblock()
 }
 
