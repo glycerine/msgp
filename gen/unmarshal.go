@@ -45,7 +45,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	u.p.comment("UnmarshalMsg implements msgp.Unmarshaler")
 
 	u.p.printf("\nfunc (%s %s) UnmarshalMsg(bts []byte) (o []byte, err error) {", p.Varname(), methodReceiver(p))
-	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { nt.PushAlwaysNil(bts[1:]) }\n")
+	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { bts = nt.PushAlwaysNil(bts[1:]) }\n")
 	next(u, p)
 	u.p.print("\no = bts")
 	u.p.nakedReturn()
@@ -160,7 +160,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 		u.p.print(errcheck)
 		u.p.closeblock()
 	default:
-		u.p.printf("\n if nt.AlwaysNil { // what here? \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", refname, b.BaseName())
+		u.p.printf("\n if nt.AlwaysNil { %s \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", b.ZeroLiteral(refname), refname, b.BaseName())
 		u.p.print(errcheck)
 		u.p.closeblock()
 	}
