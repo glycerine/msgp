@@ -143,12 +143,18 @@ type Reader struct {
 	NilTracker
 }
 
+// NilTracker maintains a stack to assit
+// DecodeMsg methods when deserializing
+// from nil  fields.
 type NilTracker struct {
 	// simulate getting nils on the wire
 	AlwaysNil     bool
 	LifoAlwaysNil []bool
 }
 
+// AlwaysNilString returns a string representation
+// of the internal state of the stack for
+// debugging purposes.
 func (r *NilTracker) AlwaysNilString() string {
 	s := "bottom: "
 	for _, v := range r.LifoAlwaysNil {
@@ -161,6 +167,9 @@ func (r *NilTracker) AlwaysNilString() string {
 	return s
 }
 
+// PushAlwaysNil will set r.AlwaysNil to true
+// and store the previous value of r.AlwaysNil
+// on the internal stack.
 func (r *NilTracker) PushAlwaysNil() {
 	// save current state
 	r.LifoAlwaysNil = append(r.LifoAlwaysNil, r.AlwaysNil)
@@ -168,6 +177,9 @@ func (r *NilTracker) PushAlwaysNil() {
 	r.AlwaysNil = true
 }
 
+// PopAlwaysNil pops the last entry off the
+// internal stack and uses it to set
+// r.AlwaysNil.
 func (r *NilTracker) PopAlwaysNil() {
 	n := len(r.LifoAlwaysNil)
 	//fmt.Printf("\n Reader.PopAlwaysNil() called! qlen = %d, '%s'\n",
