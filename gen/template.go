@@ -98,7 +98,7 @@ func genDecodeMsgTemplate(n int) (template, nStr string) {
 var templateUnmarshalMsg = `
 	// -- templateUnmarshalMsg starts here--
     var totalEncodedFields_ uint32
-    if !nt.AlwaysNil {
+    if !nbs.AlwaysNil {
 	    totalEncodedFields_, bts, err = msgp.ReadMapHeaderBytes(bts)
 	    if err != nil {
 	  	  return
@@ -126,7 +126,7 @@ doneWithStruct_:
 			//missing fields need handling
 			if nextMiss_ < 0 {
 				// set bts to contain just mnil (0xc0)
-				bts = nt.PushAlwaysNil(bts)
+				bts = nbs.PushAlwaysNil(bts)
 				nextMiss_ = 0
 			}
 			for nextMiss_ < maxFields_ && found_[nextMiss_] {

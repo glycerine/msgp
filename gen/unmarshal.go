@@ -45,7 +45,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	u.p.comment("UnmarshalMsg implements msgp.Unmarshaler")
 
 	u.p.printf("\nfunc (%s %s) UnmarshalMsg(bts []byte) (o []byte, err error) {", p.Varname(), methodReceiver(p))
-	u.p.printf("\nvar nt msgp.NilBitsStack; if msgp.IsNil(bts) { bts = nt.PushAlwaysNil(bts[1:]) }\n")
+	u.p.printf("\nvar nbs msgp.NilBitsStack; if msgp.IsNil(bts) { bts = nbs.PushAlwaysNil(bts[1:]) }\n")
 	next(u, p)
 	u.p.print("\no = bts")
 	u.p.nakedReturn()
@@ -129,7 +129,7 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 	u.p.print(errcheck)
 	u.p.print("\n}\n}") // close switch and for loop
 
-	u.p.printf("\n if nextMiss%s != -1 { bts = nt.PopAlwaysNil(); }\n", nStr)
+	u.p.printf("\n if nextMiss%s != -1 { bts = nbs.PopAlwaysNil(); }\n", nStr)
 }
 
 func (u *unmarshalGen) gBase(b *BaseElem) {
@@ -148,19 +148,19 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 
 	switch b.Value {
 	case Bytes:
-		u.p.printf("\n if nt.AlwaysNil { %s = %s[:0]} else { %s, bts, err = msgp.ReadBytesBytes(bts, %s)\n", refname, refname, refname, lowered)
+		u.p.printf("\n if nbs.AlwaysNil { %s = %s[:0]} else { %s, bts, err = msgp.ReadBytesBytes(bts, %s)\n", refname, refname, refname, lowered)
 		u.p.print(errcheck)
 		u.p.closeblock()
 	case Ext:
-		u.p.printf("\n if nt.AlwaysNil { // what here?\n} else {bts, err = msgp.ReadExtensionBytes(bts, %s)\n", lowered)
+		u.p.printf("\n if nbs.AlwaysNil { // what here?\n} else {bts, err = msgp.ReadExtensionBytes(bts, %s)\n", lowered)
 		u.p.print(errcheck)
 		u.p.closeblock()
 	case IDENT:
-		u.p.printf("\n if nt.AlwaysNil { %s.UnmarshalMsg(msgp.OnlyNilSlice) } else { bts, err = %s.UnmarshalMsg(bts)\n", lowered, lowered)
+		u.p.printf("\n if nbs.AlwaysNil { %s.UnmarshalMsg(msgp.OnlyNilSlice) } else { bts, err = %s.UnmarshalMsg(bts)\n", lowered, lowered)
 		u.p.print(errcheck)
 		u.p.closeblock()
 	default:
-		u.p.printf("\n if nt.AlwaysNil { %s \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", b.ZeroLiteral(refname), refname, b.BaseName())
+		u.p.printf("\n if nbs.AlwaysNil { %s \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", b.ZeroLiteral(refname), refname, b.BaseName())
 		u.p.print(errcheck)
 		u.p.closeblock()
 	}
@@ -194,7 +194,7 @@ func (u *unmarshalGen) gSlice(s *Slice) {
 	if !u.p.ok() {
 		return
 	}
-	u.p.printf("\n if nt.AlwaysNil { %s \n} else {\n",
+	u.p.printf("\n if nbs.AlwaysNil { %s \n} else {\n",
 		s.ZeroLiteral(`(`+s.Varname()+`)`))
 	sz := randIdent()
 	u.p.declare(sz, u32)
@@ -213,7 +213,7 @@ func (u *unmarshalGen) gMap(m *Map) {
 	if !u.p.ok() {
 		return
 	}
-	u.p.printf("\n if nt.AlwaysNil { %s \n} else {\n",
+	u.p.printf("\n if nbs.AlwaysNil { %s \n} else {\n",
 		m.ZeroLiteral(m.Varname()))
 	sz := randIdent()
 	u.p.declare(sz, u32)
@@ -233,7 +233,7 @@ func (u *unmarshalGen) gMap(m *Map) {
 }
 
 func (u *unmarshalGen) gPtr(p *Ptr) {
-	u.p.printf("\nif nt.AlwaysNil { %s = nil } else { if msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname(), p.Varname())
+	u.p.printf("\nif nbs.AlwaysNil { %s = nil } else { if msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname(), p.Varname())
 	u.p.initPtr(p)
 	next(u, p.Value)
 	u.p.closeblock()
