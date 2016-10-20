@@ -1,34 +1,24 @@
 package gen
 
-// While this looks like a regular go file,
-// it is not. It is formatted as a Go file
-// so that we can use the compiler to help
-// catch bugs. But it is actually a
-// manually instantiated template, where
-// trailing_ underscores will be replaced
-// by uniquifying numbers.
-
 import (
-	"github.com/tinylib/msgp/msgp"
-	"time"
+	"fmt"
+	"strings"
 )
 
-type DemoType struct {
-	Name     string
-	BirthDay time.Time
-}
-
+/*
 func (z *DemoType) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
 
 	// We treat empty fields as if they were Nil on the wire.
-	var fieldOrder_ = []string{"Name", "BirthDay"}
+	var decodeMsgFieldOrder_ = []string{"Name", "BirthDay"}
 
 	const maxFields_ = 2
-
-	// *start template here*
-	totalEncodedFields_, err := dc.ReadMapHeader()
+*/
+var templateDecodeMsg = `
+	// -- templateDecodeMsg starts here--
+    var totalEncodedFields_ uint32
+	totalEncodedFields_, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
@@ -66,11 +56,14 @@ doneWithStruct_:
 				break doneWithStruct_
 			}
 			missingFieldsLeft_--
-			curField_ = fieldOrder_[nextMiss_]
+			curField_ = decodeMsgFieldOrder_[nextMiss_]
 		}
 
 		switch curField_ {
-		// *finish template here*
+		// -- templateDecodeMsg ends here --
+`
+
+/*
 		case "Name":
 			found_[0] = true
 			z.Name, err = dc.ReadString()
@@ -83,10 +76,21 @@ doneWithStruct_:
 			if err != nil {
 				return
 			}
+            default:
+                err = dc.Skip()
+                if err != nil {
+                   return
+                }
 		} // end switch curField_
 	} // end for
 	if nextMiss_ != -1 {
 		dc.PopAlwaysNil()
 	}
 	return
+}
+*/
+
+func genDecodeMsgTemplate(n int) (template, nStr string) {
+	nStr = fmt.Sprintf("%v", n)
+	return strings.Replace(templateDecodeMsg, `_`, nStr, -1), nStr
 }

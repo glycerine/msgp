@@ -5,7 +5,6 @@ import (
 	"github.com/tinylib/msgp/cfg"
 	"io"
 	"strconv"
-	"strings"
 )
 
 func decode(w io.Writer, cfg *cfg.MsgpConfig) *decodeGen {
@@ -49,12 +48,19 @@ func (d *decodeGen) Execute(p Elem) error {
 		return nil
 	}
 
-	d.p.comment("DecodeMsg implements msgp.Decodable")
+	s, isStruct := p.(*Struct)
 
+	d.p.comment("DecodeMsg implements msgp.Decodable")
+	d.p.comment("We treat empty fields as if we read a Nil from the wire.")
 	d.p.printf("\nfunc (%s %s) DecodeMsg(dc *msgp.Reader) (err error) {", p.Varname(), methodReceiver(p))
 
+	// next will increment k, but we want the first, top level DecodeMsg
+	// to refer to this same k ...
 	next(d, p)
-	d.p.printf("\n dc.AlwaysNil = false\n")
+
+	if isStruct && s.AsTuple {
+		d.p.printf("\n dc.AlwaysNil = false\n")
+	}
 	d.p.nakedReturn()
 	unsetReceiver(p)
 	return d.p.err
@@ -101,141 +107,48 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 }
 
 /* func (d *decodeGen) structAsMap(s *Struct):
-
-    // Missing (empty) field handling logic:
-    //
-    // The approach to missing field handling is to
-    // keep the logic the same whether the field is
-    // missing or nil on the wire. To do so we use
-    // the Reader.PushAlwaysNil() method to tell
-    // the Reader to pretend to supply
-    // only nils until further notice. The further
-    // notice comes from the terminating dc.PopAlwaysNil()
-    // calls emptying the LIFO. The stack is
-    // needed because multiple struct decodes may
-    // be nested due to inlining.
-
-	var fieldOrder_ = []string{"Name", "BirthDay"}
-	const maxFields_ = 2
-
-    totalEncodedFields_, err := dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
-	encodedFieldsLeft_ := totalEncodedFields_
-    missingFieldsLeft_ := maxFields_ - totalEncodedFields_
-
-	var nextMiss_ int32 = -1
-	var found_ [maxFields_]bool
-	var field []byte
-    _ = field
-	var curField_ string
-
- doneWithStruct_:
-	for encodedFieldsLeft_ > 0 || missingFieldsLeft_ > 0 {
-
-         // First phase: do all the available fields.
-         // Only after all available have been handled
-         // do we embark on the second phase: missing
-         // field handling.
-
-		if encodedFieldsLeft_ > 0 {
-			encodedFieldsLeft_--
-			field, err = dc.ReadMapKeyPtr()
-			if err != nil {
-				return
-			}
-			curField_ = msgp.UnsafeString(field)
-		} else {
-			//missing fields need handling
-			if nextMiss_ < 0 {
-                // tell the reader to only give us Nils
-                // until further notice.
-				dc.PushAlwaysNil()
-				nextMiss_ = 0
-			}
-			for nextMiss_ < maxFields_ && found_[nextMiss_] {
-				nextMiss_++
-			}
-			if nextMiss_ == maxFields_ {
-				// filled all the empty fields!
-				break doneWithStruct_
-			}
-			missingFieldsLeft_--
-			curField_ = fieldOrder_[nextMiss_]
-		}
-
-		switch curField_ {
-		case "Name":
-			found_[0] = true
-			z.Name, err = dc.ReadString()
-			if err != nil {
-				return
-			}
-		case "BirthDay":
-			found_[1] = true
-			z.BirthDay, err = dc.ReadTime()
-			if err != nil {
-				return
-			}
-
-        } // end switch curField
-
-    } // end for
-	if nextMiss_ != -1 {
-		dc.PopAlwaysNil()
-	}
-
+//
+// Missing (empty) field handling logic:
+//
+// The approach to missing field handling is to
+// keep the logic the same whether the field is
+// missing or nil on the wire. To do so we use
+// the Reader.PushAlwaysNil() method to tell
+// the Reader to pretend to supply
+// only nils until further notice. The further
+// notice comes from the terminating dc.PopAlwaysNil()
+// calls emptying the LIFO. The stack is
+// needed because multiple struct decodes may
+// be nested due to inlining.
 */
 func (d *decodeGen) structAsMap(s *Struct) {
-
-	// Label to break to
-	lab := "lab_" + randIdent()
-
-	// fieldsInOrder
-	tn := s.TypeName()
-	if strings.HasPrefix(tn, "struct") {
-		tn = "anon"
-	}
-	fieldsInOrder := "fieldOrder_" + tn + "_" + randIdent()
-	var map0 string
-	map0 = fmt.Sprintf(`var %s = []string{`, fieldsInOrder)
-	for i := range s.Fields {
-		map0 += fmt.Sprintf("%q,", s.Fields[i].FieldTag)
-	}
-	map0 += `}`
-	d.p.printf("\n%s\n", map0)
-
 	n := len(s.Fields)
-	needNull := "needNull_" + randIdent()
-	nextNull := "nextNull_" + randIdent()
-
-	ns := "maxFields_" + randIdent()
-	d.p.printf("const %s = %d\n", ns, n)
-
-	f := "curField_" + randIdent()
-	d.p.printf("var %s uint32 = %s\n", needNull, ns)
-	d.p.printf("var %s int32 = -1\n", nextNull)
-	found := "found_" + randIdent()
-	d.p.printf("\nvar %s [%s]bool\n", found, ns)
-
+	if n == 0 {
+		return
+	}
 	d.needsField()
-	sz := randIdent()
-	d.p.declare(sz, u32)
-	d.p.printf("\nvar %s string\n", f)
-	d.assignAndCheck(sz, mapHeader)
 
-	d.p.printf("\n %s -= %s\n", needNull, sz)
-	d.p.printf("%s:\nfor %s > 0 || %s > 0 {\n", lab, sz, needNull)
-	//d.p.printf("fmt.Printf(\"\\n ...top of '%s' loop, sz=%%d, needNull=%%d... nextNull=%%d   depth=%d   ...lifo:'%%s'\\n\", %s, %s, %s, dc.AlwaysNilString())\n", lab, d.depth, sz, needNull, nextNull)
-	d.p.printf("if %s > 0 {%s--\n", sz, sz)
-	d.assignAndCheck("field", mapKey)
-	d.p.printf("\n %s = msgp.UnsafeString(field)\n", f)
-	d.p.printf("}else{\n //missing field handling\n if %s < 0 { dc.PushAlwaysNil(); %s = 0 }\n for %s < %s && %s[%s] { %s++ }\n", nextNull, nextNull, nextNull, ns, found, nextNull, nextNull)
-	d.p.printf("if %s == %s {\n break %s }\n", nextNull, ns, lab)
-	d.p.printf(" %s--\n", needNull)
-	d.p.printf(" %s = %s[%s]\n}\n", f, fieldsInOrder, nextNull)
-	d.p.printf("\nswitch %s {", f)
+	k := genSerial()
+	tmpl, nStr := genDecodeMsgTemplate(k)
+
+	// allocate the fieldOrder tracker once, at program startup.
+	// This happens just before the struct-specific DecodeMsg method.
+	//
+	fieldOrder := fmt.Sprintf("\n var decodeMsgFieldOrder%s = []string{", nStr)
+	for i := range s.Fields {
+		fieldOrder += fmt.Sprintf("%q,", s.Fields[i].FieldTag)
+	}
+	fieldOrder += "}\n"
+	d.p.printf("%s", fieldOrder)
+
+	d.p.printf("const maxFields%s = %d\n", nStr, n)
+
+	found := "found" + nStr
+	d.p.printf(tmpl)
+	// after printing tmpl, we are at this point:
+	// switch curField_ {
+	// -- templateDecodeMsg ends here --
+
 	for i := range s.Fields {
 		d.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
 		d.p.printf("\n%s[%d]=true;", found, i)
@@ -252,7 +165,7 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	d.p.closeblock() // close switch
 	d.p.closeblock() // close for loop
 
-	d.p.printf("\n if %s != -1 {dc.PopAlwaysNil(); }\n", nextNull)
+	d.p.printf("\n if nextMiss%s != -1 {dc.PopAlwaysNil(); }\n", nStr)
 }
 
 func (d *decodeGen) gBase(b *BaseElem) {

@@ -4,12 +4,29 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 )
 
 const (
 	idxChars = "abcdefghijlkmnopqrstuvwxyz"
 	idxLen   = 3
 )
+
+var nextGenSerial struct {
+	mut  sync.Mutex
+	next int
+}
+
+// genSerial generates serial numbers,
+// in sequence, starting at zero. Safe
+// for concurrent access.
+func genSerial() int {
+	nextGenSerial.mut.Lock()
+	n := nextGenSerial.next
+	nextGenSerial.next++
+	nextGenSerial.mut.Unlock()
+	return n
+}
 
 // generate a random identifier name
 func randIdent() string {
