@@ -305,15 +305,16 @@ func (d *decodeGen) gArray(a *Array) {
                 if err != nil {
                     return
                 }
-            } else {
-`)
+            }`) // possible else comming
 
 	// special case if we have [const]byte
 	if be, ok := a.Els.(*BaseElem); ok && (be.Value == Byte || be.Value == Uint8) {
 		d.p.printf("\nerr = dc.ReadExactBytes(%s[:])", a.Varname())
 		d.p.print(errcheck)
-		d.p.closeblock()
+		// d.p.closeblock()
 		return
+	} else {
+		d.p.printf(" else {\n")
 	}
 	sz := randIdent()
 	d.p.declare(sz, u32)

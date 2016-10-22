@@ -951,6 +951,9 @@ func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
 // exactly the length of the input slice.
 func (m *Reader) ReadExactBytes(into []byte) error {
 	if m.AlwaysNil {
+		for i := range into {
+			into[i] = 0
+		}
 		return nil
 	}
 
