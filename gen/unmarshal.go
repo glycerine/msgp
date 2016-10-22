@@ -68,7 +68,7 @@ func (u *unmarshalGen) assignAndCheck(name string, base string) {
 	if !u.p.ok() {
 		return
 	}
-	u.p.printf("\n%s, bts, err = msgp.Read%sBytes(bts)", name, base)
+	u.p.printf("\n%s, bts, err = nsb.Read%sBytes(bts)", name, base)
 	u.p.print(errcheck)
 }
 
@@ -160,21 +160,20 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 
 	switch b.Value {
 	case Bytes:
-		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) {\n if !nbs.AlwaysNil { bts=bts[1:]  }\n  %s = %s[:0]} else { %s, bts, err = msgp.ReadBytesBytes(bts, %s)\n", refname, refname, refname, lowered)
+		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) {\n if !nbs.AlwaysNil { bts = bts[1:]  }\n  %s = %s[:0]} else { %s, bts, err = nbs.ReadBytesBytes(bts, %s)\n", refname, refname, refname, lowered)
 		u.p.print(errcheck)
 		u.p.closeblock()
 	case Ext:
 		vn := b.Varname()[1:]
-		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) { if !nbs.AlwaysNil { bts = bts[1:] }\n    %s = msgp.RawExtension{}  \n} else {\n bts, err = msgp.ReadExtensionBytes(bts, %s) \n", vn, lowered)
+		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) { if !nbs.AlwaysNil { bts = bts[1:] }\n    %s = msgp.RawExtension{}  \n} else {\n bts, err = nbs.ReadExtensionBytes(bts, %s) \n", vn, lowered)
 		u.p.print(errcheck)
 		u.p.closeblock()
 	case IDENT:
 		u.p.printf("\n  bts, err = %s.UnmarshalMsg(bts);", lowered)
 		u.p.print(errcheck)
 	default:
-		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) { if !nbs.AlwaysNil { bts=bts[1:]}\n   %s \n} else {  %s, bts, err = msgp.Read%sBytes(bts)\n", b.ZeroLiteral(refname), refname, b.BaseName())
-		u.p.print(errcheck)
-		u.p.closeblock()
+		//		u.p.printf("\n if nbs.AlwaysNil || msgp.IsNil(bts) { if !nbs.AlwaysNil { bts=bts[1:]}\n   %s \n} else {  %s, bts, err = nbs.Read%sBytes(bts)\n", b.ZeroLiteral(refname), refname, b.BaseName())
+		u.p.printf("\n %s, bts, err = nbs.Read%sBytes(bts)\n", refname, b.BaseName())
 	}
 	if b.Convert {
 		// close 'tmp' block
@@ -190,7 +189,7 @@ func (u *unmarshalGen) gArray(a *Array) {
 	// special case for [const]byte objects
 	// see decode.go for symmetry
 	if be, ok := a.Els.(*BaseElem); ok && be.Value == Byte {
-		u.p.printf("\nbts, err = msgp.ReadExactBytes(bts, %s[:])", a.Varname())
+		u.p.printf("\nbts, err = nbs.ReadExactBytes(bts, %s[:])", a.Varname())
 		u.p.print(errcheck)
 		return
 	}
@@ -272,7 +271,7 @@ func (u *unmarshalGen) gPtr(p *Ptr) {
 
 			u.p.printf("\n if (nbs.AlwaysNil || msgp.IsNil(bts)) { \n // don't try to re-use extension pointers\n if !nbs.AlwaysNil { bts=bts[1:]  }\n %s = nil } else {\n // we have data \n", vname)
 			u.p.initPtr(p)
-			u.p.printf("\n  bts, err = msgp.ReadExtensionBytes(bts, %s)\n", vname)
+			u.p.printf("\n  bts, err = nbs.ReadExtensionBytes(bts, %s)\n", vname)
 			u.p.print(errcheck)
 			u.p.closeblock()
 			return

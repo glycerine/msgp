@@ -50,7 +50,9 @@ func PrintFile(file string, f *parse.FileSet, mode gen.Method) error {
 func format(file string, data []byte) error {
 	out, err := imports.Process(file, data, nil)
 	if err != nil {
-		fmt.Printf("\n\n debug: problem file:\n%s\n", string(data))
+		fmt.Printf("\n\n debug: problem file:\n%s\n", file)
+		ioutil.WriteFile(file, data, 0600)
+		panic(err)
 		return err
 	}
 	return ioutil.WriteFile(file, out, 0600)
