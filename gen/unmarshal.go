@@ -68,7 +68,7 @@ func (u *unmarshalGen) assignAndCheck(name string, base string) {
 	if !u.p.ok() {
 		return
 	}
-	u.p.printf("\n%s, bts, err = nsb.Read%sBytes(bts)", name, base)
+	u.p.printf("\n%s, bts, err = nbs.Read%sBytes(bts)", name, base)
 	u.p.print(errcheck)
 }
 

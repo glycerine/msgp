@@ -100,7 +100,7 @@ var templateUnmarshalMsg = `
 	// -- templateUnmarshalMsg starts here--
     var totalEncodedFields_ uint32
     if !nbs.AlwaysNil {
-	    totalEncodedFields_, bts, err = msgp.ReadMapHeaderBytes(bts)
+	    totalEncodedFields_, bts, err = nbs.ReadMapHeaderBytes(bts)
 	    if err != nil { 
           panic(err)
 	  	  return
@@ -120,7 +120,7 @@ doneWithStruct_:
         fmt.Printf("encodedFieldsLeft: %%v, missingFieldsLeft: %%v, found: '%%v', fields: '%%#v'\n", encodedFieldsLeft_, missingFieldsLeft_, msgp.ShowFound(found_[:]), unmarshalMsgFieldOrder_)
 		if encodedFieldsLeft_ > 0 {
 			encodedFieldsLeft_--
-			field, bts, err = msgp.ReadMapKeyZC(bts)
+			field, bts, err = nbs.ReadMapKeyZC(bts)
 			if err != nil { 
                 panic(err)
 				return
