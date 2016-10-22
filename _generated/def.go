@@ -240,6 +240,9 @@ type TopNester struct {
 	TopId      int
 	Greetings  string `msg:",omitempty"`
 	Bullwinkle *Rocky `msg:",omitempty"`
+
+	MyIntArray  [3]int
+	MyByteArray [3]byte
 }
 
 type Rocky struct {

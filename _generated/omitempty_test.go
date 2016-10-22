@@ -34,6 +34,8 @@ func TestMissingNilledOutWhenUnmarshallingNilIntoNestedStructs(t *testing.T) {
 				Id:      2,
 			},
 		},
+		MyIntArray:  [3]int{4, 5, 6},
+		MyByteArray: [3]byte{1, 2, 3},
 	}
 
 	// so pointers should not change upon decoding from nil
