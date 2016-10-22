@@ -65,6 +65,18 @@ func TestMissingNilledOutWhenUnmarshallingNilIntoNestedStructs(t *testing.T) {
 	if len(o) != 0 {
 		t.Fatal("nilMsg should have been consumed")
 	}
+
+	for i := range s.MyIntArray {
+		if s.MyIntArray[i] != 0 {
+			panic("shoud have been set to 0")
+		}
+	}
+	for i := range s.MyByteArray {
+		if s.MyIntArray[i] != 0 {
+			panic("shoud have been set to 0")
+		}
+	}
+
 	if pGreet != &s.Greetings {
 		t.Fatal("pGreet differed from original")
 	}
