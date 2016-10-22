@@ -85,11 +85,14 @@ func (d *decodeGen) Execute(p Elem) error {
 	d.p.printf("\nfunc (%s %s) DecodeMsg(dc *msgp.Reader) (err error) {\n", p.Varname(), methodReceiver(p))
 
 	d.p.printf(`var sawTopNil bool
-	if dc.IsNil() {
-		sawTopNil = true
-		dc.Skip()
-		dc.PushAlwaysNil()
-	}
+  if dc.IsNil() {
+    sawTopNil = true
+    err = dc.ReadNil()
+    if err != nil {
+       return
+    }
+    dc.PushAlwaysNil()
+  }
 `)
 
 	// next will increment k, but we want the first, top level DecodeMsg
