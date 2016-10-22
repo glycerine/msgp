@@ -297,18 +297,29 @@ func (d *decodeGen) gArray(a *Array) {
 	if !d.p.ok() {
 		return
 	}
+	d.p.printf(`
+            if dc.AlwaysNil {
+                // nothing more here
+            } else if dc.IsNil() {
+                err = dc.ReadNil()
+                if err != nil {
+                    return
+                }
+            } else {
+`)
 
 	// special case if we have [const]byte
 	if be, ok := a.Els.(*BaseElem); ok && (be.Value == Byte || be.Value == Uint8) {
 		d.p.printf("\nerr = dc.ReadExactBytes(%s[:])", a.Varname())
 		d.p.print(errcheck)
+		d.p.closeblock()
 		return
 	}
 	sz := randIdent()
 	d.p.declare(sz, u32)
 	d.assignAndCheck(sz, arrayHeader)
 	d.p.arrayCheck(a.Size, sz)
-
+	d.p.closeblock()
 	d.p.rangeBlock(a.Index, a.Varname(), d, a.Els)
 }
 
