@@ -336,8 +336,8 @@ func (p *printer) resizeSlice(size string, s *Slice) {
 	p.printf("\nif cap(%[1]s) >= int(%[2]s) { %[1]s = (%[1]s)[:%[2]s] } else { %[1]s = make(%[3]s, %[2]s) }", s.Varname(), size, s.TypeName())
 }
 
-func (p *printer) arrayCheck(want string, got string) {
-	p.printf("\nif %[1]s != %[2]s { err = msgp.ArrayError{Wanted: %[2]s, Got: %[1]s}; return }", got, want)
+func (p *printer) arrayCheck(want string, got string, additionalGuard string) {
+	p.printf("\nif %[3]s %[1]s != %[2]s { err = msgp.ArrayError{Wanted: %[2]s, Got: %[1]s}; return }", got, want, additionalGuard)
 }
 
 func (p *printer) closeblock() { p.print("\n}") }

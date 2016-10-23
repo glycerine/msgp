@@ -95,7 +95,7 @@ func (u *unmarshalGen) tuple(s *Struct) {
 	sz := randIdent()
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, arrayHeader)
-	u.p.arrayCheck(strconv.Itoa(len(s.Fields)), sz)
+	u.p.arrayCheck(strconv.Itoa(len(s.Fields)), sz, "")
 	for i := range s.Fields {
 		if !u.p.ok() {
 			return
@@ -197,7 +197,7 @@ func (u *unmarshalGen) gArray(a *Array) {
 	sz := randIdent()
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, arrayHeader)
-	u.p.arrayCheck(a.Size, sz)
+	u.p.arrayCheck(a.Size, sz, "!nbs.IsNil(bts) && ")
 	u.p.rangeBlock(a.Index, a.Varname(), u, a.Els)
 }
 

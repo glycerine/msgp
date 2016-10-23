@@ -16,6 +16,16 @@ type NilBitsStack struct {
 	LifoBts       [][]byte
 }
 
+func (r *NilBitsStack) IsNil(bts []byte) bool {
+	if r.AlwaysNil {
+		return true
+	}
+	if len(bts) != 0 && bts[0] == mnil {
+		return true
+	}
+	return false
+}
+
 // OnlyNilSlice is a slice that contains
 // only the msgpack nil (0xc0) bytes.
 var OnlyNilSlice = []byte{mnil}

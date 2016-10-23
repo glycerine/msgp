@@ -141,7 +141,7 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 	sz := randIdent()
 	d.p.declare(sz, u32)
 	d.assignAndCheck(sz, arrayHeader)
-	d.p.arrayCheck(strconv.Itoa(nfields), sz)
+	d.p.arrayCheck(strconv.Itoa(nfields), sz, "")
 	for i := range s.Fields {
 		if !d.p.ok() {
 			return
@@ -318,7 +318,7 @@ func (d *decodeGen) gArray(a *Array) {
 	sz := randIdent()
 	d.p.declare(sz, u32)
 	d.assignAndCheck(sz, arrayHeader)
-	d.p.arrayCheck(a.Size, sz)
+	d.p.arrayCheck(a.Size, sz, "!dc.IsNil() && ")
 	d.p.closeblock()
 	d.p.rangeBlock(a.Index, a.Varname(), d, a.Els)
 }
