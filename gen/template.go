@@ -33,7 +33,7 @@ doneWithStruct_:
 	// First fill all the encoded fields, then
 	// treat the remaining, missing fields, as Nil.
 	for encodedFieldsLeft_ > 0 || missingFieldsLeft_ > 0 {
-        fmt.Printf("encodedFieldsLeft: %%v, missingFieldsLeft: %%v, found: '%%v', fields: '%%#v'\n", encodedFieldsLeft_, missingFieldsLeft_, msgp.ShowFound(found_[:]), decodeMsgFieldOrder_)
+        //fmt.Printf("encodedFieldsLeft: %%v, missingFieldsLeft: %%v, found: '%%v', fields: '%%#v'\n", encodedFieldsLeft_, missingFieldsLeft_, msgp.ShowFound(found_[:]), decodeMsgFieldOrder_)
 		if encodedFieldsLeft_ > 0 {
 			encodedFieldsLeft_--
 			field, err = dc.ReadMapKeyPtr()
@@ -59,7 +59,7 @@ doneWithStruct_:
 			missingFieldsLeft_--
 			curField_ = decodeMsgFieldOrder_[nextMiss_]
 		}
-        fmt.Printf("switching on curField: '%%v'\n", curField_)
+        //fmt.Printf("switching on curField: '%%v'\n", curField_)
 		switch curField_ {
 		// -- templateDecodeMsg ends here --
 `
@@ -117,7 +117,7 @@ doneWithStruct_:
 	// First fill all the encoded fields, then
 	// treat the remaining, missing fields, as Nil.
 	for encodedFieldsLeft_ > 0 || missingFieldsLeft_ > 0 {
-        fmt.Printf("encodedFieldsLeft: %%v, missingFieldsLeft: %%v, found: '%%v', fields: '%%#v'\n", encodedFieldsLeft_, missingFieldsLeft_, msgp.ShowFound(found_[:]), unmarshalMsgFieldOrder_)
+        //fmt.Printf("encodedFieldsLeft: %%v, missingFieldsLeft: %%v, found: '%%v', fields: '%%#v'\n", encodedFieldsLeft_, missingFieldsLeft_, msgp.ShowFound(found_[:]), unmarshalMsgFieldOrder_)
 		if encodedFieldsLeft_ > 0 {
 			encodedFieldsLeft_--
 			field, bts, err = nbs.ReadMapKeyZC(bts)
@@ -143,7 +143,7 @@ doneWithStruct_:
 			missingFieldsLeft_--
 			curField_ = unmarshalMsgFieldOrder_[nextMiss_]
 		}
-        fmt.Printf("switching on curField: '%%v'\n", curField_)
+        //fmt.Printf("switching on curField: '%%v'\n", curField_)
 		switch curField_ {
 		// -- templateUnmarshalMsg ends here --
 `

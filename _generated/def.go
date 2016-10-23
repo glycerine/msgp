@@ -243,6 +243,8 @@ type TopNester struct {
 
 	MyIntArray  [3]int
 	MyByteArray [3]byte
+	MyMap       map[string]string
+	MyArrayMap  [3]map[string]string
 }
 
 type Rocky struct {
