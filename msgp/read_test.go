@@ -28,7 +28,7 @@ func TestReadIntf(t *testing.T) {
 		float32(9082.092),
 		int64(-40),
 		uint64(9082981),
-		time.Now(),
+		time.Now().Truncate(0),
 		"hello!",
 		[]byte("hello!"),
 		map[string]interface{}{
@@ -611,7 +611,7 @@ func BenchmarkReadComplex128(b *testing.B) {
 
 func TestTime(t *testing.T) {
 	var buf bytes.Buffer
-	now := time.Now()
+	now := time.Now().Truncate(0)
 	en := NewWriter(&buf)
 	dc := NewReader(&buf)
 
@@ -635,7 +635,7 @@ func TestTime(t *testing.T) {
 	}
 
 	// check for time.Local zone
-	if now != out {
+	if now.Truncate(0) != out {
 		t.Error("returned time.Time not set to time.Local")
 	}
 }
